@@ -40,10 +40,8 @@ BEGIN
         'sg_calc_income_tax' ,
         'p_income=%0,p_deduction=%1', p_income,p_deduction );
 		
-	ln_income := TO_NUMBER(REPLACE(p_income, ',', ''), '9999999999.99');
-	ln_deduction := TO_NUMBER(REPLACE(p_deduction, ',', ''), '9999999999.99');
+	ln_taxable_income := TO_NUMBER(REPLACE(p_income, ',', ''), '9999999999.99');
 
-    ln_taxable_income := ln_income - ln_deduction;
     IF ln_taxable_income > ln_tax_exemtion_incoome
     THEN
         IF (ln_taxable_income > ln_slab4_lower AND ln_taxable_income < ln_slab4_upper)
