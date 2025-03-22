@@ -37,11 +37,11 @@ prompt APPLICATION 120185 - Income Tax Calculator
 --   Flashback:       0
 --   Export Type:     Application Export
 --     Pages:                      7
---       Items:                   10
+--       Items:                   18
 --       Processes:                6
 --       Regions:                 10
 --       Buttons:                  4
---       Dynamic Actions:          1
+--       Dynamic Actions:          4
 --     Shared Components:
 --       Logic:
 --         Build Options:          4
@@ -52,6 +52,7 @@ prompt APPLICATION 120185 - Income Tax Calculator
 --       Security:
 --         Authentication:         2
 --         Authorization:          1
+--         ACL Roles:              2
 --       User Interface:
 --         Themes:                 1
 --         Templates:
@@ -92,6 +93,7 @@ wwv_imp_workspace.create_flow(
 ,p_application_tab_set=>0
 ,p_logo_type=>'I'
 ,p_logo=>'#APP_FILES#sg.jpg'
+,p_public_user=>'APEX_PUBLIC_USER'
 ,p_proxy_server=>nvl(wwv_flow_application_install.get_proxy,'')
 ,p_no_proxy_domains=>nvl(wwv_flow_application_install.get_no_proxy_domains,'')
 ,p_flow_version=>'Release 1.1'
@@ -107,7 +109,7 @@ wwv_imp_workspace.create_flow(
 ,p_substitution_value_01=>'Income Tax Calculator'
 ,p_file_prefix => nvl(wwv_flow_application_install.get_static_app_file_prefix,'')
 ,p_files_version=>19
-,p_version_scn=>15610573764836
+,p_version_scn=>15613494628249
 ,p_print_server_type=>'INSTANCE'
 ,p_file_storage=>'DB'
 ,p_is_pwa=>'Y'
@@ -9176,11 +9178,35 @@ begin
 wwv_flow_imp_shared.create_security_scheme(
  p_id=>wwv_flow_imp.id(13689977367046461036)
 ,p_name=>'Administration Rights'
-,p_scheme_type=>'NATIVE_FUNCTION_BODY'
-,p_attribute_01=>'return true;'
+,p_scheme_type=>'NATIVE_EXISTS'
+,p_attribute_01=>wwv_flow_string.join(wwv_flow_t_varchar2(
+'SELECT 1 ',
+'FROM APEX_APPL_ACL_USER_ROLES ',
+'WHERE user_name =:APP_USER',
+'AND role_static_id = ''DEVELOPER'''))
 ,p_error_message=>'Insufficient privileges, user is not an Administrator'
-,p_version_scn=>15607560029093
+,p_version_scn=>15613467624767
 ,p_caching=>'BY_USER_BY_PAGE_VIEW'
+);
+end;
+/
+prompt --application/shared_components/security/app_access_control/developer
+begin
+wwv_flow_imp_shared.create_acl_role(
+ p_id=>wwv_flow_imp.id(22062384964736249745)
+,p_static_id=>'DEVELOPER'
+,p_name=>'DEVELOPER'
+,p_version_scn=>15613465677334
+);
+end;
+/
+prompt --application/shared_components/security/app_access_control/end_user
+begin
+wwv_flow_imp_shared.create_acl_role(
+ p_id=>wwv_flow_imp.id(22062441126337523746)
+,p_static_id=>'END_USER'
+,p_name=>'END_USER'
+,p_version_scn=>15613465702907
 );
 end;
 /
@@ -9442,7 +9468,7 @@ wwv_flow_imp_page.create_page_plug(
 ,p_region_name=>'tax_spacer'
 ,p_region_template_options=>'#DEFAULT#'
 ,p_plug_template=>4501440665235496320
-,p_plug_display_sequence=>50
+,p_plug_display_sequence=>150
 ,p_location=>null
 ,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
   'expand_shortcuts', 'N',
@@ -9466,7 +9492,7 @@ wwv_flow_imp_page.create_page_plug(
 );
 wwv_flow_imp_page.create_page_button(
  p_id=>wwv_flow_imp.id(5159643144543861626)
-,p_button_sequence=>30
+,p_button_sequence=>130
 ,p_button_name=>'Calculate'
 ,p_button_action=>'SUBMIT'
 ,p_button_template_options=>'#DEFAULT#:t-Button--iconLeft'
@@ -9478,7 +9504,7 @@ wwv_flow_imp_page.create_page_button(
 );
 wwv_flow_imp_page.create_page_button(
  p_id=>wwv_flow_imp.id(5159644036905861635)
-,p_button_sequence=>40
+,p_button_sequence=>140
 ,p_button_name=>'Clear'
 ,p_button_action=>'SUBMIT'
 ,p_button_template_options=>'#DEFAULT#:t-Button--iconLeft'
@@ -9490,41 +9516,39 @@ wwv_flow_imp_page.create_page_button(
 );
 wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(5159642803382861623)
-,p_name=>'P1_INCOME'
-,p_is_required=>true
-,p_item_sequence=>10
-,p_prompt=>'Annual Income'
-,p_format_mask=>'FM999G99G99G99G990D00'
-,p_display_as=>'NATIVE_NUMBER_FIELD'
-,p_cSize=>30
+,p_name=>'P1_DISP_TOTAL_INCOME'
+,p_item_sequence=>70
+,p_item_default=>'0'
+,p_prompt=>'Total Income'
+,p_display_as=>'NATIVE_DISPLAY_ONLY'
 ,p_grid_label_column_span=>1
-,p_field_template=>2526760615038828570
+,p_field_template=>2318601014859922299
 ,p_item_template_options=>'#DEFAULT#'
 ,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'number_alignment', 'left',
-  'virtual_keyboard', 'decimal')).to_clob
+  'based_on', 'VALUE',
+  'format', 'PLAIN',
+  'send_on_page_submit', 'N',
+  'show_line_breaks', 'Y')).to_clob
 );
 wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(5159643052905861625)
-,p_name=>'P1_DEDUCTION'
-,p_is_required=>true
-,p_item_sequence=>20
-,p_item_default=>'75000'
-,p_prompt=>'Deductions'
-,p_format_mask=>'FM999G99G99G99G990D00'
-,p_display_as=>'NATIVE_NUMBER_FIELD'
-,p_cSize=>30
+,p_name=>'P1_DISP_DEDUCTION'
+,p_item_sequence=>90
+,p_prompt=>'Standard Deduction'
+,p_display_as=>'NATIVE_DISPLAY_ONLY'
 ,p_grid_label_column_span=>1
-,p_field_template=>2526760615038828570
+,p_field_template=>2318601014859922299
 ,p_item_template_options=>'#DEFAULT#'
 ,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
-  'number_alignment', 'left',
-  'virtual_keyboard', 'decimal')).to_clob
+  'based_on', 'VALUE',
+  'format', 'PLAIN',
+  'send_on_page_submit', 'N',
+  'show_line_breaks', 'Y')).to_clob
 );
 wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(5159643391279861628)
 ,p_name=>'P1_INCOME_TAX'
-,p_item_sequence=>60
+,p_item_sequence=>160
 ,p_prompt=>'Income Tax Per Year'
 ,p_display_as=>'NATIVE_TEXT_FIELD'
 ,p_cSize=>30
@@ -9542,7 +9566,7 @@ wwv_flow_imp_page.create_page_item(
 wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(5159643591028861630)
 ,p_name=>'P1_INCOME_TAX_M'
-,p_item_sequence=>70
+,p_item_sequence=>170
 ,p_prompt=>'Income Tax Per Month'
 ,p_display_as=>'NATIVE_TEXT_FIELD'
 ,p_cSize=>30
@@ -9556,6 +9580,222 @@ wwv_flow_imp_page.create_page_item(
   'submit_when_enter_pressed', 'N',
   'subtype', 'TEXT',
   'trim_spaces', 'BOTH')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(5159644196362861636)
+,p_name=>'P1_REGIME'
+,p_is_required=>true
+,p_item_sequence=>10
+,p_item_default=>'NEW'
+,p_display_as=>'NATIVE_RADIOGROUP'
+,p_lov=>'STATIC2:New Regime;NEW,Old Regime;OLD'
+,p_lov_display_extra=>'NO'
+,p_security_scheme=>wwv_flow_imp.id(13689977367046461036)
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'number_of_columns', '2',
+  'page_action_on_selection', 'NONE')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(5159645008472861645)
+,p_name=>'P1_SALARY'
+,p_item_sequence=>20
+,p_item_default=>'0'
+,p_prompt=>'Gross Salary'
+,p_format_mask=>'FM999G99G99G99G990D00'
+,p_display_as=>'NATIVE_NUMBER_FIELD'
+,p_cSize=>30
+,p_grid_label_column_span=>1
+,p_field_template=>2318601014859922299
+,p_item_template_options=>'#DEFAULT#'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'min_value', '0',
+  'number_alignment', 'left',
+  'virtual_keyboard', 'decimal')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(5159645181500861646)
+,p_name=>'P1_OTHERS'
+,p_item_sequence=>40
+,p_item_default=>'0'
+,p_prompt=>'Other Income'
+,p_format_mask=>'FM999G99G99G99G990D00'
+,p_display_as=>'NATIVE_NUMBER_FIELD'
+,p_cSize=>30
+,p_grid_label_column_span=>1
+,p_field_template=>2318601014859922299
+,p_item_template_options=>'#DEFAULT#'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'min_value', '0',
+  'number_alignment', 'left',
+  'virtual_keyboard', 'decimal')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(5159645200069861647)
+,p_name=>'P1_PF'
+,p_item_sequence=>30
+,p_item_default=>'0'
+,p_prompt=>'Provident Fund '
+,p_format_mask=>'FM999G99G99G99G990D00'
+,p_display_as=>'NATIVE_NUMBER_FIELD'
+,p_cSize=>30
+,p_grid_label_column_span=>1
+,p_field_template=>2318601014859922299
+,p_item_template_options=>'#DEFAULT#'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'min_value', '0',
+  'number_alignment', 'left',
+  'virtual_keyboard', 'decimal')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(5159645419973861649)
+,p_name=>'P1_DEDUCTION'
+,p_item_sequence=>80
+,p_display_as=>'NATIVE_HIDDEN'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'value_protected', 'N')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(22090964094214380101)
+,p_name=>'P1_TOTAL_INCOME'
+,p_item_sequence=>50
+,p_display_as=>'NATIVE_HIDDEN'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'value_protected', 'N')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(22090964670881380107)
+,p_name=>'P1_TAXABLE_INCOME'
+,p_item_sequence=>100
+,p_display_as=>'NATIVE_HIDDEN'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'value_protected', 'N')).to_clob
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(22090964722605380108)
+,p_name=>'P1_DISP_TAXABLE_INCOME'
+,p_item_sequence=>110
+,p_item_default=>'0'
+,p_prompt=>'Taxable Income'
+,p_display_as=>'NATIVE_DISPLAY_ONLY'
+,p_grid_label_column_span=>1
+,p_field_template=>2318601014859922299
+,p_item_template_options=>'#DEFAULT#'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'based_on', 'VALUE',
+  'format', 'PLAIN',
+  'send_on_page_submit', 'N',
+  'show_line_breaks', 'Y')).to_clob
+);
+wwv_flow_imp_page.create_page_da_event(
+ p_id=>wwv_flow_imp.id(5159644276186861637)
+,p_name=>'Set Std Deductions'
+,p_event_sequence=>10
+,p_triggering_element_type=>'ITEM'
+,p_triggering_element=>'P1_REGIME'
+,p_bind_type=>'bind'
+,p_execution_type=>'IMMEDIATE'
+,p_bind_event_type=>'change'
+);
+wwv_flow_imp_page.create_page_da_action(
+ p_id=>wwv_flow_imp.id(5159644481429861639)
+,p_event_id=>wwv_flow_imp.id(5159644276186861637)
+,p_event_result=>'TRUE'
+,p_action_sequence=>20
+,p_execute_on_page_init=>'Y'
+,p_action=>'NATIVE_SET_VALUE'
+,p_affected_elements_type=>'ITEM'
+,p_affected_elements=>'P1_DISP_DEDUCTION,P1_DEDUCTION'
+,p_attribute_01=>'STATIC_ASSIGNMENT'
+,p_attribute_02=>'50000'
+,p_attribute_09=>'N'
+,p_wait_for_result=>'Y'
+,p_client_condition_type=>'EQUALS'
+,p_client_condition_element=>'P1_REGIME'
+,p_client_condition_expression=>'OLD'
+);
+wwv_flow_imp_page.create_page_da_action(
+ p_id=>wwv_flow_imp.id(5159644978592861644)
+,p_event_id=>wwv_flow_imp.id(5159644276186861637)
+,p_event_result=>'TRUE'
+,p_action_sequence=>30
+,p_execute_on_page_init=>'Y'
+,p_action=>'NATIVE_SET_VALUE'
+,p_affected_elements_type=>'ITEM'
+,p_affected_elements=>'P1_DISP_DEDUCTION,P1_DEDUCTION'
+,p_attribute_01=>'STATIC_ASSIGNMENT'
+,p_attribute_02=>'75000'
+,p_attribute_09=>'N'
+,p_wait_for_result=>'Y'
+,p_client_condition_type=>'EQUALS'
+,p_client_condition_element=>'P1_REGIME'
+,p_client_condition_expression=>'NEW'
+);
+wwv_flow_imp_page.create_page_da_event(
+ p_id=>wwv_flow_imp.id(22090964238465380103)
+,p_name=>'Set Total Income'
+,p_event_sequence=>20
+,p_triggering_element_type=>'ITEM'
+,p_triggering_element=>'P1_SALARY,P1_OTHERS'
+,p_bind_type=>'bind'
+,p_execution_type=>'IMMEDIATE'
+,p_bind_event_type=>'change'
+);
+wwv_flow_imp_page.create_page_da_action(
+ p_id=>wwv_flow_imp.id(22090964410032380105)
+,p_event_id=>wwv_flow_imp.id(22090964238465380103)
+,p_event_result=>'TRUE'
+,p_action_sequence=>10
+,p_execute_on_page_init=>'Y'
+,p_action=>'NATIVE_SET_VALUE'
+,p_affected_elements_type=>'ITEM'
+,p_affected_elements=>'P1_TOTAL_INCOME,P1_DISP_TOTAL_INCOME'
+,p_attribute_01=>'PLSQL_EXPRESSION'
+,p_attribute_04=>'TO_CHAR((TO_NUMBER(REPLACE(:P1_SALARY, '','', ''''), ''9999999999.99'')+TO_NUMBER(REPLACE(:P1_OTHERS, '','', ''''), ''9999999999.99'') ),''FM999G99G99G99G990D00'')'
+,p_attribute_07=>'P1_SALARY,P1_OTHERS'
+,p_attribute_08=>'Y'
+,p_attribute_09=>'N'
+,p_wait_for_result=>'Y'
+);
+wwv_flow_imp_page.create_page_da_event(
+ p_id=>wwv_flow_imp.id(22090964847014380109)
+,p_name=>'Set Taxable Income'
+,p_event_sequence=>30
+,p_triggering_element_type=>'ITEM'
+,p_triggering_element=>'P1_TOTAL_INCOME,P1_PF,P1_DEDUCTION'
+,p_bind_type=>'bind'
+,p_execution_type=>'IMMEDIATE'
+,p_bind_event_type=>'change'
+);
+wwv_flow_imp_page.create_page_da_action(
+ p_id=>wwv_flow_imp.id(22090964906450380110)
+,p_event_id=>wwv_flow_imp.id(22090964847014380109)
+,p_event_result=>'TRUE'
+,p_action_sequence=>10
+,p_execute_on_page_init=>'N'
+,p_action=>'NATIVE_SET_VALUE'
+,p_affected_elements_type=>'ITEM'
+,p_affected_elements=>'P1_TAXABLE_INCOME,P1_DISP_TAXABLE_INCOME'
+,p_attribute_01=>'FUNCTION_BODY'
+,p_attribute_06=>wwv_flow_string.join(wwv_flow_t_varchar2(
+'DECLARE',
+'    ln_taxable_income NUMBER;',
+'    lv_taxable_income VARCHAR2(1000);',
+'BEGIN',
+'    ln_taxable_income := (TO_NUMBER(REPLACE(:P1_TOTAL_INCOME, '','', ''''), ''9999999999.99'')) -(TO_NUMBER(REPLACE(:P1_PF, '','', ''''), ''9999999999.99''))-(TO_NUMBER(REPLACE(:P1_DEDUCTION, '','', ''''), ''9999999999.99''));',
+'',
+'    IF ln_taxable_income < 0',
+'    THEN',
+'        ln_taxable_income := 0;',
+'    END IF;',
+'',
+'    lv_taxable_income := TO_CHAR(ln_taxable_income,''FM999G99G99G99G990D00'');',
+'    RETURN lv_taxable_income;',
+'END;',
+''))
+,p_attribute_07=>'P1_PF,P1_TOTAL_INCOME,P1_DEDUCTION'
+,p_attribute_08=>'Y'
+,p_attribute_09=>'N'
+,p_wait_for_result=>'Y'
 );
 wwv_flow_imp_page.create_page_process(
  p_id=>wwv_flow_imp.id(5159643944444861634)
@@ -9579,7 +9819,7 @@ wwv_flow_imp_page.create_page_process(
 '    ln_income_tax NUMBER;',
 '    ln_income_tax_m NUMBER;',
 'BEGIN',
-'    ln_income_tax := sg_calc_income_tax(:P1_INCOME,:P1_DEDUCTION);',
+'    ln_income_tax := sg_calc_income_tax(:P1_TAXABLE_INCOME);',
 '    :P1_INCOME_TAX := TO_CHAR(ln_income_tax,''FM999G99G99G99G990D00'');',
 '    ln_income_tax_m := ln_income_tax/12;',
 '    :P1_INCOME_TAX_M := TO_CHAR(ln_income_tax_m,''FM999G99G99G99G990D00'');',
