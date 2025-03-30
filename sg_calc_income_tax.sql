@@ -1,93 +1,152 @@
-CREATE OR REPLACE FUNCTION sg_calc_income_tax (
-    p_income IN VARCHAR2,
-	p_deduction IN VARCHAR2)
-RETURN NUMBER
-AS	
-    ln_income_tax   NUMBER;
-	ln_income NUMBER;
-	ln_deduction NUMBER;
-    ln_taxable_income NUMBER;
-    ln_tax_exemtion_incoome NUMBER := 1200000;
-    ln_slab1_lower NUMBER := 0;
-    ln_slab1_upper NUMBER := 400000;
-    ln_slab1_tax_perc   NUMBER := 0;
-    ln_slab1_tax NUMBER;
-    ln_slab2_lower NUMBER := 400000;
-    ln_slab2_upper NUMBER := 800000;
-    ln_slab2_tax_perc   NUMBER := 5;
-    ln_slab2_tax NUMBER;
-    ln_slab3_lower NUMBER := 800000;
-    ln_slab3_upper NUMBER := 1200000;
-    ln_slab3_tax_perc   NUMBER := 10;
-    ln_slab3_tax NUMBER;
-    ln_slab4_lower NUMBER := 1200000;
-    ln_slab4_upper NUMBER := 1600000;
-    ln_slab4_tax_perc   NUMBER := 15;
-    ln_slab4_tax NUMBER;
-    ln_slab5_lower NUMBER := 1600000;
-    ln_slab5_upper NUMBER := 2000000;
-    ln_slab5_tax_perc   NUMBER := 20;
-    ln_slab5_tax NUMBER;
-    ln_slab6_lower NUMBER := 2000000;
-    ln_slab6_upper NUMBER := 2400000;
-    ln_slab6_tax_perc   NUMBER := 25;
-    ln_slab6_tax NUMBER;
-    ln_slab7_lower NUMBER := 2400000;
-    ln_slab7_tax_perc   NUMBER := 30;
-    ln_slab7_tax NUMBER;
-BEGIN
-    apex_debug.enter(
-        'sg_calc_income_tax' ,
-        'p_income=%0,p_deduction=%1', p_income,p_deduction );
-		
-	ln_taxable_income := TO_NUMBER(REPLACE(p_income, ',', ''), '9999999999.99');
+CREATE OR REPLACE FUNCTION SG_CALC_INCOME_TAX (
+    P_REGIME         VARCHAR2,
+    P_TAXABLE_INCOME IN NUMBER
+) RETURN NUMBER AS
 
-    IF ln_taxable_income > ln_tax_exemtion_incoome
-    THEN
-        IF (ln_taxable_income > ln_slab4_lower AND ln_taxable_income < ln_slab4_upper)
-        THEN
-            ln_slab1_tax := (ln_slab1_upper-ln_slab1_lower)*ln_slab1_tax_perc/100;
-            ln_slab2_tax := (ln_slab2_upper-ln_slab2_lower)*ln_slab2_tax_perc/100;
-            ln_slab3_tax := (ln_slab3_upper-ln_slab3_lower)*ln_slab3_tax_perc/100;
-            ln_slab4_tax := (ln_taxable_income - ln_slab4_lower)*ln_slab4_tax_perc/100;
-            ln_income_tax := ln_slab1_tax + ln_slab2_tax + ln_slab3_tax + ln_slab4_tax;
-        ELSIF (ln_taxable_income > ln_slab5_lower AND ln_taxable_income < ln_slab5_upper)
-        THEN
-            ln_slab1_tax := (ln_slab1_upper-ln_slab1_lower)*ln_slab1_tax_perc/100;
-            ln_slab2_tax := (ln_slab2_upper-ln_slab2_lower)*ln_slab2_tax_perc/100;
-            ln_slab3_tax := (ln_slab3_upper-ln_slab3_lower)*ln_slab3_tax_perc/100;            
-            ln_slab4_tax := (ln_slab4_upper-ln_slab4_lower)*ln_slab4_tax_perc/100;
-            ln_slab5_tax := (ln_taxable_income - ln_slab5_lower)*ln_slab5_tax_perc/100;
-            ln_income_tax := ln_slab1_tax + ln_slab2_tax + ln_slab3_tax + ln_slab4_tax + ln_slab5_tax;
-        ELSIF (ln_taxable_income > ln_slab6_lower AND ln_taxable_income < ln_slab6_upper)
-        THEN 
-            ln_slab1_tax := (ln_slab1_upper-ln_slab1_lower)*ln_slab1_tax_perc/100;
-            ln_slab2_tax := (ln_slab2_upper-ln_slab2_lower)*ln_slab2_tax_perc/100;
-            ln_slab3_tax := (ln_slab3_upper-ln_slab3_lower)*ln_slab3_tax_perc/100;            
-            ln_slab4_tax := (ln_slab4_upper-ln_slab4_lower)*ln_slab4_tax_perc/100;           
-            ln_slab5_tax := (ln_slab5_upper-ln_slab5_lower)*ln_slab5_tax_perc/100;
-            ln_slab6_tax := (ln_taxable_income - ln_slab6_lower)*ln_slab6_tax_perc/100;
-            ln_income_tax := ln_slab1_tax + ln_slab2_tax + ln_slab3_tax + ln_slab4_tax + ln_slab5_tax + ln_slab6_tax;
-        ELSIF ln_taxable_income > ln_slab7_lower
-        THEN 
-            ln_slab1_tax := (ln_slab1_upper-ln_slab1_lower)*ln_slab1_tax_perc/100;
-            ln_slab2_tax := (ln_slab2_upper-ln_slab2_lower)*ln_slab2_tax_perc/100;
-            ln_slab3_tax := (ln_slab3_upper-ln_slab3_lower)*ln_slab3_tax_perc/100;            
-            ln_slab4_tax := (ln_slab4_upper-ln_slab4_lower)*ln_slab4_tax_perc/100;           
-            ln_slab5_tax := (ln_slab5_upper-ln_slab5_lower)*ln_slab5_tax_perc/100;
-            ln_slab6_tax := (ln_slab6_upper-ln_slab6_lower)*ln_slab6_tax_perc/100;
-            ln_slab7_tax := (ln_taxable_income - ln_slab7_lower)*ln_slab7_tax_perc/100;
-            ln_income_tax := ln_slab1_tax + ln_slab2_tax + ln_slab3_tax + ln_slab4_tax + ln_slab5_tax + ln_slab6_tax+ln_slab7_tax;
+    LN_INCOME_TAX           NUMBER;
+    LN_INCOME               NUMBER;
+    LN_DEDUCTION            NUMBER;
+    LN_TAXABLE_INCOME       NUMBER;
+    LN_TAX_EXEMTION_INCOOME NUMBER;
+    LN_SLAB1_LOWER          NUMBER;
+    LN_SLAB1_UPPER          NUMBER;
+    LN_SLAB1_TAX_PERC       NUMBER;
+    LN_SLAB1_TAX            NUMBER;
+    LN_SLAB2_LOWER          NUMBER;
+    LN_SLAB2_UPPER          NUMBER;
+    LN_SLAB2_TAX_PERC       NUMBER;
+    LN_SLAB2_TAX            NUMBER;
+    LN_SLAB3_LOWER          NUMBER;
+    LN_SLAB3_UPPER          NUMBER;
+    LN_SLAB3_TAX_PERC       NUMBER;
+    LN_SLAB3_TAX            NUMBER;
+    LN_SLAB4_LOWER          NUMBER;
+    LN_SLAB4_UPPER          NUMBER;
+    LN_SLAB4_TAX_PERC       NUMBER;
+    LN_SLAB4_TAX            NUMBER;
+    LN_SLAB5_LOWER          NUMBER;
+    LN_SLAB5_UPPER          NUMBER;
+    LN_SLAB5_TAX_PERC       NUMBER;
+    LN_SLAB5_TAX            NUMBER;
+    LN_SLAB6_LOWER          NUMBER;
+    LN_SLAB6_UPPER          NUMBER;
+    LN_SLAB6_TAX_PERC       NUMBER;
+    LN_SLAB6_TAX            NUMBER;
+    LN_SLAB7_LOWER          NUMBER;
+    LN_SLAB7_TAX_PERC       NUMBER;
+    LN_SLAB7_TAX            NUMBER;
+BEGIN
+    APEX_DEBUG.ENTER('sg_calc_income_tax', 'p_taxable_income=%0', P_TAXABLE_INCOME);
+    IF P_REGIME = 'NEW' THEN
+        LN_TAX_EXEMTION_INCOOME := 1200000;
+        LN_SLAB1_LOWER := 0;
+        LN_SLAB1_UPPER := 400000;
+        LN_SLAB1_TAX_PERC := 0;
+        LN_SLAB2_LOWER := 400000;
+        LN_SLAB2_UPPER := 800000;
+        LN_SLAB2_TAX_PERC := 5;
+        LN_SLAB3_LOWER := 800000;
+        LN_SLAB3_UPPER := 1200000;
+        LN_SLAB3_TAX_PERC := 10;
+        LN_SLAB4_LOWER := 1200000;
+        LN_SLAB4_UPPER := 1600000;
+        LN_SLAB4_TAX_PERC := 15;
+        LN_SLAB5_LOWER := 1600000;
+        LN_SLAB5_UPPER := 2000000;
+        LN_SLAB5_TAX_PERC := 20;
+        LN_SLAB6_LOWER := 2000000;
+        LN_SLAB6_UPPER := 2400000;
+        LN_SLAB6_TAX_PERC := 25;
+        LN_SLAB7_LOWER := 2400000;
+        LN_SLAB7_TAX_PERC := 30;
+        IF P_TAXABLE_INCOME > LN_TAX_EXEMTION_INCOOME THEN
+            IF (
+                P_TAXABLE_INCOME > LN_SLAB4_LOWER
+                AND P_TAXABLE_INCOME < LN_SLAB4_UPPER
+            ) THEN
+                LN_SLAB1_TAX := ( LN_SLAB1_UPPER - LN_SLAB1_LOWER ) * LN_SLAB1_TAX_PERC / 100;
+                LN_SLAB2_TAX := ( LN_SLAB2_UPPER - LN_SLAB2_LOWER ) * LN_SLAB2_TAX_PERC / 100;
+                LN_SLAB3_TAX := ( LN_SLAB3_UPPER - LN_SLAB3_LOWER ) * LN_SLAB3_TAX_PERC / 100;
+                LN_SLAB4_TAX := ( P_TAXABLE_INCOME - LN_SLAB4_LOWER ) * LN_SLAB4_TAX_PERC / 100;
+                LN_INCOME_TAX := LN_SLAB1_TAX + LN_SLAB2_TAX + LN_SLAB3_TAX + LN_SLAB4_TAX;
+            ELSIF (
+                P_TAXABLE_INCOME > LN_SLAB5_LOWER
+                AND P_TAXABLE_INCOME < LN_SLAB5_UPPER
+            ) THEN
+                LN_SLAB1_TAX := ( LN_SLAB1_UPPER - LN_SLAB1_LOWER ) * LN_SLAB1_TAX_PERC / 100;
+                LN_SLAB2_TAX := ( LN_SLAB2_UPPER - LN_SLAB2_LOWER ) * LN_SLAB2_TAX_PERC / 100;
+                LN_SLAB3_TAX := ( LN_SLAB3_UPPER - LN_SLAB3_LOWER ) * LN_SLAB3_TAX_PERC / 100;
+                LN_SLAB4_TAX := ( LN_SLAB4_UPPER - LN_SLAB4_LOWER ) * LN_SLAB4_TAX_PERC / 100;
+                LN_SLAB5_TAX := ( P_TAXABLE_INCOME - LN_SLAB5_LOWER ) * LN_SLAB5_TAX_PERC / 100;
+                LN_INCOME_TAX := LN_SLAB1_TAX + LN_SLAB2_TAX + LN_SLAB3_TAX + LN_SLAB4_TAX + LN_SLAB5_TAX;
+            ELSIF (
+                P_TAXABLE_INCOME > LN_SLAB6_LOWER
+                AND P_TAXABLE_INCOME < LN_SLAB6_UPPER
+            ) THEN
+                LN_SLAB1_TAX := ( LN_SLAB1_UPPER - LN_SLAB1_LOWER ) * LN_SLAB1_TAX_PERC / 100;
+                LN_SLAB2_TAX := ( LN_SLAB2_UPPER - LN_SLAB2_LOWER ) * LN_SLAB2_TAX_PERC / 100;
+                LN_SLAB3_TAX := ( LN_SLAB3_UPPER - LN_SLAB3_LOWER ) * LN_SLAB3_TAX_PERC / 100;
+                LN_SLAB4_TAX := ( LN_SLAB4_UPPER - LN_SLAB4_LOWER ) * LN_SLAB4_TAX_PERC / 100;
+                LN_SLAB5_TAX := ( LN_SLAB5_UPPER - LN_SLAB5_LOWER ) * LN_SLAB5_TAX_PERC / 100;
+                LN_SLAB6_TAX := ( P_TAXABLE_INCOME - LN_SLAB6_LOWER ) * LN_SLAB6_TAX_PERC / 100;
+                LN_INCOME_TAX := LN_SLAB1_TAX + LN_SLAB2_TAX + LN_SLAB3_TAX + LN_SLAB4_TAX + LN_SLAB5_TAX + LN_SLAB6_TAX;
+            ELSIF P_TAXABLE_INCOME > LN_SLAB7_LOWER THEN
+                LN_SLAB1_TAX := ( LN_SLAB1_UPPER - LN_SLAB1_LOWER ) * LN_SLAB1_TAX_PERC / 100;
+                LN_SLAB2_TAX := ( LN_SLAB2_UPPER - LN_SLAB2_LOWER ) * LN_SLAB2_TAX_PERC / 100;
+                LN_SLAB3_TAX := ( LN_SLAB3_UPPER - LN_SLAB3_LOWER ) * LN_SLAB3_TAX_PERC / 100;
+                LN_SLAB4_TAX := ( LN_SLAB4_UPPER - LN_SLAB4_LOWER ) * LN_SLAB4_TAX_PERC / 100;
+                LN_SLAB5_TAX := ( LN_SLAB5_UPPER - LN_SLAB5_LOWER ) * LN_SLAB5_TAX_PERC / 100;
+                LN_SLAB6_TAX := ( LN_SLAB6_UPPER - LN_SLAB6_LOWER ) * LN_SLAB6_TAX_PERC / 100;
+                LN_SLAB7_TAX := ( P_TAXABLE_INCOME - LN_SLAB7_LOWER ) * LN_SLAB7_TAX_PERC / 100;
+                LN_INCOME_TAX := LN_SLAB1_TAX + LN_SLAB2_TAX + LN_SLAB3_TAX + LN_SLAB4_TAX + LN_SLAB5_TAX + LN_SLAB6_TAX + LN_SLAB7_TAX
+                ;
+            END IF;
+        ELSE
+            LN_INCOME_TAX := 0;
         END IF;
-    ELSE 
-        ln_income_tax := 0;
+
+    ELSE
+        LN_SLAB1_LOWER := 0;
+        LN_SLAB1_UPPER := 250000;
+        LN_SLAB1_TAX_PERC := 0;
+        LN_SLAB2_LOWER := 250000;
+        LN_SLAB2_UPPER := 500000;
+        LN_SLAB2_TAX_PERC := 5;
+        LN_SLAB3_LOWER := 500000;
+        LN_SLAB3_UPPER := 1000000;
+        LN_SLAB3_TAX_PERC := 20;
+        LN_SLAB4_LOWER := 1000000;
+        LN_SLAB4_TAX_PERC := 30;
+        IF (
+            P_TAXABLE_INCOME > LN_SLAB2_LOWER
+            AND P_TAXABLE_INCOME < LN_SLAB2_UPPER
+        ) THEN
+            LN_SLAB2_TAX := ( P_TAXABLE_INCOME - LN_SLAB2_LOWER ) * LN_SLAB2_TAX_PERC / 100;
+            LN_INCOME_TAX := LN_SLAB2_TAX;
+        ELSIF (
+            P_TAXABLE_INCOME > LN_SLAB3_LOWER
+            AND P_TAXABLE_INCOME < LN_SLAB3_UPPER
+        ) THEN
+            LN_SLAB2_TAX := ( LN_SLAB2_UPPER - LN_SLAB2_LOWER ) * LN_SLAB2_TAX_PERC / 100;
+            LN_SLAB3_TAX := ( P_TAXABLE_INCOME - LN_SLAB3_LOWER ) * LN_SLAB3_TAX_PERC / 100;
+            LN_INCOME_TAX := LN_SLAB2_TAX + LN_SLAB3_TAX;
+        ELSIF P_TAXABLE_INCOME > LN_SLAB4_LOWER THEN
+            LN_SLAB2_TAX := ( LN_SLAB2_UPPER - LN_SLAB2_LOWER ) * LN_SLAB2_TAX_PERC / 100;
+            LN_SLAB3_TAX := ( LN_SLAB3_UPPER - LN_SLAB3_LOWER ) * LN_SLAB3_TAX_PERC / 100;
+            LN_SLAB4_TAX := ( P_TAXABLE_INCOME - LN_SLAB4_LOWER ) * LN_SLAB4_TAX_PERC / 100;
+            LN_INCOME_TAX := LN_SLAB2_TAX + LN_SLAB3_TAX + LN_SLAB4_TAX;
+        ELSE
+            LN_INCOME_TAX := 0;
+        END IF;
+
     END IF;
-	
-    RETURN ln_income_tax;
+
+    RETURN LN_INCOME_TAX;
 EXCEPTION
     WHEN OTHERS THEN
-        apex_debug.warn(
-            p_message => 'Unexpected error. ',
-            p0        => SQLERRM);
+        APEX_DEBUG.WARN(
+            P_MESSAGE => 'Unexpected error. ',
+            P0        => SQLERRM
+        );
         RAISE;
-END sg_calc_income_tax;
+END SG_CALC_INCOME_TAX;
