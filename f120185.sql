@@ -10104,7 +10104,7 @@ wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(5159645200069861647)
 ,p_name=>'P1_PF'
 ,p_item_sequence=>40
-,p_prompt=>'Provident Fund (B) <br> Employer Contribution '
+,p_prompt=>'Provident Fund (B)'
 ,p_placeholder=>'0.00'
 ,p_format_mask=>'FM999G99G99G99G990D00'
 ,p_source_type=>'ALWAYS_NULL'
@@ -10127,7 +10127,7 @@ wwv_flow_imp_page.create_page_item(
 ,p_name=>'P1_VPF'
 ,p_item_sequence=>45
 ,p_prompt=>'VPF (% of Basic Salary)'
-,p_placeholder=>'Optional, 0.00 to 88.00'
+,p_placeholder=>'0.00'
 ,p_source_type=>'ALWAYS_NULL'
 ,p_display_as=>'NATIVE_NUMBER_FIELD'
 ,p_cSize=>30
