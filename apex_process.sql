@@ -11,6 +11,8 @@ DECLARE
 	ln_total_tax_payable NUMBER;
     ln_net_income NUMBER;
     ln_net_income_m NUMBER;
+	ln_vpf_percentage NUMBER;
+	ln_vpf NUMBER;
 BEGIN
 	IF :P1_REGIME = 'NEW'
 	THEN
@@ -25,6 +27,9 @@ BEGIN
 	
 	ln_salary := NVL(TO_NUMBER(REPLACE(:P1_SALARY, ',', ''), '9999999999.99'),0);
 	ln_pf := NVL(TO_NUMBER(REPLACE(:P1_PF, ',', ''), '9999999999.99'),0);
+	ln_vpf_percentage := NVL(TO_NUMBER(REPLACE(:P1_VPF, ',', ''), '9999999999.99'),0);
+	-- PF is 12% of Basic Salary, so VPF is the selected percentage of Basic.
+	ln_vpf := ln_pf * ln_vpf_percentage / 12;
 	ln_other_income := NVL(TO_NUMBER(REPLACE(:P1_OTHER_INCOME, ',', ''), '9999999999.99'),0);
 	ln_exemptions := NVL(TO_NUMBER(REPLACE(:P1_EXEMPTIONS, ',', ''), '9999999999.99'),0);
 	ln_taxable_income := ln_salary - ln_pf + ln_other_income - ln_exemptions - ln_deduction;
@@ -42,7 +47,8 @@ BEGIN
 	:P1_TOTAL_TAX_PAYABLE := TO_CHAR(ln_total_tax_payable,'FM999G99G99G99G990D00');
     ln_tax_payable_m := ln_total_tax_payable/12;
     :P1_TAX_PAYABLE_M := TO_CHAR(ln_tax_payable_m,'FM999G99G99G99G990D00');
-    ln_net_income := ln_salary + ln_other_income - (2*ln_pf) - ln_total_tax_payable;
+	-- VPF reduces take-home pay but does not reduce taxable income.
+    ln_net_income := ln_salary + ln_other_income - (2*ln_pf) - ln_vpf - ln_total_tax_payable;
     :P1_NET_INCOME := TO_CHAR(ln_net_income,'FM999G99G99G99G990D00');
     ln_net_income_m := ln_net_income/12;
     :P1_NET_INCOME_M := TO_CHAR(ln_net_income_m,'FM999G99G99G99G990D00');

@@ -10034,7 +10034,7 @@ wwv_flow_imp_page.create_page_item(
  p_id=>wwv_flow_imp.id(22090965891897380119)
 ,p_name=>'P1_NET_INCOME'
 ,p_item_sequence=>160
-,p_prompt=>'Net Income <br> (Excl. PF) '
+,p_prompt=>'Take-home Income <br> (After PF and VPF) '
 ,p_placeholder=>'0.00'
 ,p_source_type=>'ALWAYS_NULL'
 ,p_display_as=>'NATIVE_TEXT_FIELD'
@@ -10120,6 +10120,28 @@ wwv_flow_imp_page.create_page_item(
 ,p_created_on=>wwv_flow_imp.dz('20250322200126Z')
 ,p_updated_on=>wwv_flow_imp.dz('20260217113541Z')
 ,p_created_by=>'SATHEESH.GALLA@OUTLOOK.COM'
+,p_updated_by=>'SGALLA'
+);
+wwv_flow_imp_page.create_page_item(
+ p_id=>wwv_flow_imp.id(138399598593207627306)
+,p_name=>'P1_VPF'
+,p_item_sequence=>45
+,p_prompt=>'VPF (% of Basic Salary)'
+,p_placeholder=>'Optional, 0.00 to 88.00'
+,p_source_type=>'ALWAYS_NULL'
+,p_display_as=>'NATIVE_NUMBER_FIELD'
+,p_cSize=>30
+,p_grid_label_column_span=>1
+,p_field_template=>2318601014859922299
+,p_item_template_options=>'#DEFAULT#'
+,p_attributes=>wwv_flow_t_plugin_attributes(wwv_flow_t_varchar2(
+  'max_value', '88',
+  'min_value', '0',
+  'number_alignment', 'left',
+  'virtual_keyboard', 'decimal')).to_clob
+,p_created_on=>wwv_flow_imp.dz('20260919000000Z')
+,p_updated_on=>wwv_flow_imp.dz('20260919000000Z')
+,p_created_by=>'SGALLA'
 ,p_updated_by=>'SGALLA'
 );
 wwv_flow_imp_page.create_page_item(
@@ -10376,7 +10398,7 @@ wwv_flow_imp_page.create_page_da_action(
 ,p_static_id=>'native-clear'
 ,p_action=>'NATIVE_CLEAR'
 ,p_affected_elements_type=>'ITEM'
-,p_affected_elements=>'P1_SALARY,P1_PF'
+,p_affected_elements=>'P1_SALARY,P1_PF,P1_VPF'
 ,p_created_on=>wwv_flow_imp.dz('20260217122247Z')
 ,p_updated_on=>wwv_flow_imp.dz('20260217122247Z')
 ,p_created_by=>'SGALLA'
@@ -10391,7 +10413,7 @@ wwv_flow_imp_page.create_page_da_action(
 ,p_static_id=>'native-disable'
 ,p_action=>'NATIVE_DISABLE'
 ,p_affected_elements_type=>'ITEM'
-,p_affected_elements=>'P1_PF,P1_SALARY'
+,p_affected_elements=>'P1_PF,P1_SALARY,P1_VPF'
 ,p_created_on=>wwv_flow_imp.dz('20260217115050Z')
 ,p_updated_on=>wwv_flow_imp.dz('20260217122247Z')
 ,p_created_by=>'SGALLA'
@@ -10406,7 +10428,7 @@ wwv_flow_imp_page.create_page_da_action(
 ,p_static_id=>'native-enable'
 ,p_action=>'NATIVE_ENABLE'
 ,p_affected_elements_type=>'ITEM'
-,p_affected_elements=>'P1_PF,P1_SALARY'
+,p_affected_elements=>'P1_PF,P1_SALARY,P1_VPF'
 ,p_created_on=>wwv_flow_imp.dz('20260217115050Z')
 ,p_updated_on=>wwv_flow_imp.dz('20260217120609Z')
 ,p_created_by=>'SGALLA'
@@ -10429,6 +10451,26 @@ wwv_flow_imp_page.create_page_process(
 ,p_created_by=>'SATHEESH.GALLA@OUTLOOK.COM'
 ,p_updated_by=>'SATHEESH.GALLA@OUTLOOK.COM'
 );
+wwv_flow_imp_page.create_page_validation(
+ p_id=>wwv_flow_imp.id(138399598707708627307)
+,p_validation_name=>'VPF Percentage Cannot Exceed 88'
+,p_validation_sequence=>10
+,p_validation=>wwv_flow_string.join(wwv_flow_t_varchar2(
+'if :P1_VPF is null then',
+'    return true;',
+'else',
+'    return to_number(replace(:P1_VPF, '','', '''')) between 0 and 88;',
+'end if;'))
+,p_validation2=>'PLSQL'
+,p_validation_type=>'FUNC_BODY_RETURNING_BOOLEAN'
+,p_error_message=>'VPF must be a percentage from 0 to 88.'
+,p_error_display_location=>'INLINE_WITH_FIELD_AND_NOTIFICATION'
+,p_associated_item=>wwv_flow_imp.id(138399598593207627306)
+,p_created_on=>wwv_flow_imp.dz('20260919000000Z')
+,p_updated_on=>wwv_flow_imp.dz('20260919000000Z')
+,p_created_by=>'SGALLA'
+,p_updated_by=>'SGALLA'
+);
 wwv_flow_imp_page.create_page_process(
  p_id=>wwv_flow_imp.id(5159643441464861629)
 ,p_process_sequence=>20
@@ -10450,6 +10492,8 @@ wwv_flow_imp_page.create_page_process(
 '	ln_total_tax_payable NUMBER;',
 '    ln_net_income NUMBER;',
 '    ln_net_income_m NUMBER;',
+'    ln_vpf_percentage NUMBER;',
+'    ln_vpf NUMBER;',
 'BEGIN',
 '    IF :P1_SALARIED = ''Y''',
 '    THEN',
@@ -10467,7 +10511,10 @@ wwv_flow_imp_page.create_page_process(
 '	:P1_DEDUCTION := TO_CHAR(ln_deduction,''FM999G99G99G99G990D00'');',
 '	',
 '	ln_salary := NVL(TO_NUMBER(REPLACE(:P1_SALARY, '','', ''''), ''9999999999.99''),0);',
-'	ln_pf := NVL(TO_NUMBER(REPLACE(:P1_PF, '','', ''''), ''9999999999.99''),0);',
+'    ln_pf := NVL(TO_NUMBER(REPLACE(:P1_PF, '','', ''''), ''9999999999.99''),0);',
+'    ln_vpf_percentage := NVL(TO_NUMBER(REPLACE(:P1_VPF, '','', ''''), ''9999999999.99''),0);',
+'    -- PF is 12% of Basic Salary, so VPF is calculated as the selected percentage of Basic.',
+'    ln_vpf := ln_pf * ln_vpf_percentage / 12;',
 '	ln_other_income := NVL(TO_NUMBER(REPLACE(:P1_OTHER_INCOME, '','', ''''), ''9999999999.99''),0);',
 '	ln_exemptions := NVL(TO_NUMBER(REPLACE(:P1_EXEMPTIONS, '','', ''''), ''9999999999.99''),0);',
 '	ln_taxable_income := ln_salary - ln_pf + ln_other_income - ln_exemptions - ln_deduction;',
@@ -10485,7 +10532,8 @@ wwv_flow_imp_page.create_page_process(
 '	:P1_TOTAL_TAX_PAYABLE := TO_CHAR(ln_total_tax_payable,''FM999G99G99G99G990D00'');',
 '    ln_tax_payable_m := ln_total_tax_payable/12;',
 '    :P1_TAX_PAYABLE_M := TO_CHAR(ln_tax_payable_m,''FM999G99G99G99G990D00'');',
-'    ln_net_income := ln_salary + ln_other_income - (2*ln_pf) - ln_total_tax_payable;',
+'    -- VPF reduces take-home pay but does not reduce taxable income.',
+'    ln_net_income := ln_salary + ln_other_income - (2*ln_pf) - ln_vpf - ln_total_tax_payable;',
 '    :P1_NET_INCOME := TO_CHAR(ln_net_income,''FM999G99G99G99G990D00'');',
 '    ln_net_income_m := ln_net_income/12;',
 '    :P1_NET_INCOME_M := TO_CHAR(ln_net_income_m,''FM999G99G99G99G990D00'');',
